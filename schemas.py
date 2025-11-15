@@ -1,48 +1,44 @@
 """
-Database Schemas
+Database Schemas for BookMyShow-style app
 
-Define your MongoDB collection schemas here using Pydantic models.
-These schemas are used for data validation in your application.
-
-Each Pydantic model represents a collection in your database.
-Model name is converted to lowercase for the collection name:
-- User -> "user" collection
-- Product -> "product" collection
-- BlogPost -> "blogs" collection
+Each Pydantic model corresponds to a MongoDB collection. The collection name is the
+lowercase of the class name (e.g., Movie -> "movie").
 """
-
+from typing import List, Optional
 from pydantic import BaseModel, Field
-from typing import Optional
 
-# Example schemas (replace with your own):
+class Movie(BaseModel):
+    title: str = Field(..., description="Movie title")
+    poster_url: Optional[str] = Field(None, description="Poster image URL")
+    languages: List[str] = Field(default_factory=list, description="Available languages")
+    genres: List[str] = Field(default_factory=list, description="Genres")
+    rating: Optional[float] = Field(None, ge=0, le=10, description="Rating out of 10")
+    runtime_mins: Optional[int] = Field(None, description="Runtime in minutes")
+    certification: Optional[str] = Field(None, description="Certification e.g. UA, U, A")
+    synopsis: Optional[str] = Field(None, description="Short description")
 
-class User(BaseModel):
-    """
-    Users collection schema
-    Collection name: "user" (lowercase of class name)
-    """
-    name: str = Field(..., description="Full name")
-    email: str = Field(..., description="Email address")
-    address: str = Field(..., description="Address")
-    age: Optional[int] = Field(None, ge=0, le=120, description="Age in years")
-    is_active: bool = Field(True, description="Whether user is active")
+class Cinema(BaseModel):
+    name: str = Field(..., description="Cinema name")
+    city: str = Field(..., description="City name")
+    address: Optional[str] = Field(None, description="Street address")
 
-class Product(BaseModel):
-    """
-    Products collection schema
-    Collection name: "product" (lowercase of class name)
-    """
-    title: str = Field(..., description="Product title")
-    description: Optional[str] = Field(None, description="Product description")
-    price: float = Field(..., ge=0, description="Price in dollars")
-    category: str = Field(..., description="Product category")
-    in_stock: bool = Field(True, description="Whether product is in stock")
+class Screen(BaseModel):
+    cinema_id: str = Field(..., description="Reference to cinema _id as string")
+    name: str = Field(..., description="Screen name e.g., Screen 1")
+    rows: int = Field(..., ge=1, le=20, description="Number of seat rows")
+    seats_per_row: int = Field(..., ge=1, le=30, description="Seats per row")
 
-# Add your own schemas here:
-# --------------------------------------------------
+class Showtime(BaseModel):
+    movie_id: str = Field(..., description="Reference to movie _id as string")
+    cinema_id: str = Field(..., description="Reference to cinema _id as string")
+    screen_id: str = Field(..., description="Reference to screen _id as string")
+    start_time: str = Field(..., description="ISO datetime string for show start")
+    language: str = Field(..., description="Language of the show")
+    price_map: dict = Field(default_factory=dict, description="Seat category to price mapping")
 
-# Note: The Flames database viewer will automatically:
-# 1. Read these schemas from GET /schema endpoint
-# 2. Use them for document validation when creating/editing
-# 3. Handle all database operations (CRUD) directly
-# 4. You don't need to create any database endpoints!
+class Booking(BaseModel):
+    showtime_id: str = Field(..., description="Reference to showtime _id as string")
+    customer_name: str = Field(..., description="Name of customer")
+    customer_email: str = Field(..., description="Email of customer")
+    seats: List[str] = Field(..., description="List of seat codes e.g., A1, A2")
+    total_amount: float = Field(..., ge=0, description="Total booking amount")
